@@ -63,9 +63,15 @@ def initialize_firebase():
             cred = credentials.Certificate('firebase-service-account.json')
             print("Firebase credentials loaded from local file")
         
-        # Initialize Firebase app
-        firebase_admin.initialize_app(cred)
-        print("Firebase Admin SDK initialized")
+        # Initialize Firebase app (check if already initialized)
+        try:
+            # Check if Firebase app is already initialized
+            firebase_admin.get_app()
+            print("Firebase app already initialized, using existing app")
+        except ValueError:
+            # No app exists, initialize new one
+            firebase_admin.initialize_app(cred)
+            print("Firebase Admin SDK initialized")
         
         # Test Firestore connection
         db = firestore.client()
@@ -87,35 +93,25 @@ def initialize_firebase():
         db = None
         return False
 
-# Initialize Firebase with multiple retry attempts
-firebase_initialized = False
-max_retries = 3
+# Initialize Firebase
+print("Initializing Firebase...")
+firebase_initialized = initialize_firebase()
 
-for attempt in range(max_retries):
-    print(f"Firebase initialization attempt {attempt + 1}/{max_retries}")
-    
-    try:
-        firebase_initialized = initialize_firebase()
-        if firebase_initialized:
-            print("✅ Firebase initialized successfully!")
-            break
-        else:
-            print(f"❌ Attempt {attempt + 1} failed")
-    except Exception as e:
-        print(f"❌ Attempt {attempt + 1} failed with error: {e}")
-    
-    if attempt < max_retries - 1:
-        print("⏳ Waiting 5 seconds before retry...")
-        import time
-        time.sleep(5)
-
-if not firebase_initialized:
-    print("WARNING: All Firebase initialization attempts failed. Some features may not work.")
+if firebase_initialized:
+    print("✅ Firebase initialized successfully!")
+else:
+    print("WARNING: Firebase initialization failed. Some features may not work.")
     # Try one more time with Application Default Credentials
     try:
         print("Attempting fallback initialization with Application Default Credentials...")
         cred = credentials.ApplicationDefault()
-        firebase_admin.initialize_app(cred)
+        # Check if Firebase app is already initialized
+        try:
+            firebase_admin.get_app()
+            print("Firebase app already initialized, using existing app")
+        except ValueError:
+            firebase_admin.initialize_app(cred)
+            print("Firebase initialized with Application Default Credentials")
         db = firestore.client()
         print("✅ Firebase initialized with Application Default Credentials")
         firebase_initialized = True
