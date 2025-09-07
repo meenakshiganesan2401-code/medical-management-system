@@ -7,12 +7,30 @@ import requests
 from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-this'
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
 
 # Initialize Firebase Admin SDK
-# You'll need to download your Firebase service account key and place it in the project directory
 try:
-    cred = credentials.Certificate('firebase-service-account.json')
+    # Check if we're in production (Render) or development
+    if os.environ.get('FIREBASE_PROJECT_ID'):
+        # Production: Use environment variables
+        firebase_config = {
+            "type": "service_account",
+            "project_id": os.environ.get('FIREBASE_PROJECT_ID'),
+            "private_key_id": os.environ.get('FIREBASE_PRIVATE_KEY_ID'),
+            "private_key": os.environ.get('FIREBASE_PRIVATE_KEY').replace('\\n', '\n'),
+            "client_email": os.environ.get('FIREBASE_CLIENT_EMAIL'),
+            "client_id": os.environ.get('FIREBASE_CLIENT_ID'),
+            "auth_uri": os.environ.get('FIREBASE_AUTH_URI', 'https://accounts.google.com/o/oauth2/auth'),
+            "token_uri": os.environ.get('FIREBASE_TOKEN_URI', 'https://oauth2.googleapis.com/token')
+        }
+        cred = credentials.Certificate(firebase_config)
+        print("Firebase initialized with environment variables")
+    else:
+        # Development: Use local file
+        cred = credentials.Certificate('firebase-service-account.json')
+        print("Firebase initialized with local file")
+    
     firebase_admin.initialize_app(cred)
     db = firestore.client()
     print("Firebase initialized successfully")
@@ -21,8 +39,8 @@ except Exception as e:
     db = None
 
 # NodeMCU configuration
-NODEMCU_IP = "192.168.1.100"  # Change this to your NodeMCU IP address
-NODEMCU_PORT = 80
+NODEMCU_IP = os.environ.get('NODEMCU_IP', '192.168.1.100')
+NODEMCU_PORT = int(os.environ.get('NODEMCU_PORT', 80))
 
 def login_required(f):
     @wraps(f)
