@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Medical Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </h1>
+            <div class="text-muted">
+                Welcome back, {{ session.user_name }}!
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                <h5 class="card-title">{{ patients|length }}</h5>
+                <p class="card-text text-muted">Total Patients</p>
+            </div>
+        </div>
+    </div>
+    
+    {% if session.user_role == 'doctor' %}
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-pills fa-2x text-success mb-2"></i>
+                <h5 class="card-title" id="totalMedicines">-</h5>
+                <p class="card-text text-muted">Medicines</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-prescription-bottle-alt fa-2x text-warning mb-2"></i>
+                <h5 class="card-title" id="totalPrescriptions">-</h5>
+                <p class="card-text text-muted">Active Prescriptions</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-info mb-2"></i>
+                <h5 class="card-title" id="dispensedToday">-</h5>
+                <p class="card-text text-muted">Dispensed Today</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-user-plus fa-2x text-success mb-2"></i>
+                <h5 class="card-title">{{ patients|length }}</h5>
+                <p class="card-text text-muted">Your Patients</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-prescription-bottle-alt fa-2x text-warning mb-2"></i>
+                <h5 class="card-title" id="pendingPrescriptions">-</h5>
+                <p class="card-text text-muted">Pending Dispensing</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-info mb-2"></i>
+                <h5 class="card-title" id="dispensedToday">-</h5>
+                <p class="card-text text-muted">Dispensed Today</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if session.user_role == 'assistant' %}
+                    <div class="col-md-4 col-sm-6 mb-3">
+                        <a href="{{ url_for('add_patient') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-user-plus"></i> Add New Patient
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if session.user_role == 'doctor' %}
+                    <div class="col-md-4 col-sm-6 mb-3">
+                        <a href="{{ url_for('add_medicine') }}" class="btn btn-success w-100">
+                            <i class="fas fa-pills"></i> Add Medicine
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-4 col-sm-6 mb-3">
+                        <button class="btn btn-info w-100" onclick="refreshData()">
+                            <i class="fas fa-sync-alt"></i> Refresh Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patient Search -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-search"></i> Search Patients
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <input type="text" class="form-control" id="patientSearch" placeholder="Search by name or age...">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Patients</option>
+                            <option value="active">With Active Prescriptions</option>
+                            <option value="completed">All Prescriptions Dispensed</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patients List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-users"></i> 
+                    {% if session.user_role == 'doctor' %}
+                        All Patients
+                    {% else %}
+                        Your Patients
+                    {% endif %}
+                </h5>
+                <span class="badge bg-primary" id="patientCount">{{ patients|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if patients %}
+                    <div class="row" id="patientsList">
+                        {% for patient in patients %}
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="patient-card" data-patient-id="{{ patient.id }}">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h6 class="patient-name mb-0">{{ patient.name }}</h6>
+                                    <span class="badge bg-secondary patient-age">{{ patient.age }} years</span>
+                                </div>
+                                
+                                <div class="patient-info">
+                                    <div class="patient-info-item">
+                                        <div class="patient-info-label">Height</div>
+                                        <div class="patient-info-value">{{ patient.height }} cm</div>
+                                    </div>
+                                    <div class="patient-info-item">
+                                        <div class="patient-info-label">Weight</div>
+                                        <div class="patient-info-value">{{ patient.weight }} kg</div>
+                                    </div>
+                                    <div class="patient-info-item">
+                                        <div class="patient-info-label">BP</div>
+                                        <div class="patient-info-value">{{ patient.bp }}</div>
+                                    </div>
+                                    <div class="patient-info-item">
+                                        <div class="patient-info-label">Temp</div>
+                                        <div class="patient-info-value">{{ patient.temp }}°C</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i> 
+                                        {{ patient.created_at.strftime('%d/%m/%Y') if patient.created_at else 'N/A' }}
+                                    </small>
+                                    <div>
+                                        <a href="{{ url_for('patient_detail', patient_id=patient.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                {% if patient.prescriptions %}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-pills"></i> 
+                                        {{ patient.prescriptions|length }} prescription(s)
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No patients found</h5>
+                        <p class="text-muted">
+                            {% if session.user_role == 'assistant' %}
+                                Start by adding your first patient.
+                            {% else %}
+                                No patients have been created yet.
+                            {% endif %}
+                        </p>
+                        {% if session.user_role == 'assistant' %}
+                        <a href="{{ url_for('add_patient') }}" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Add First Patient
+                        </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Patient search functionality
+    document.getElementById('patientSearch').addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        const patientCards = document.querySelectorAll('.patient-card');
+        let visibleCount = 0;
+        
+        patientCards.forEach(card => {
+            const patientName = card.querySelector('.patient-name').textContent.toLowerCase();
+            const patientAge = card.querySelector('.patient-age').textContent;
+            
+            if (patientName.includes(query) || patientAge.includes(query)) {
+                card.closest('.col-lg-6').style.display = 'block';
+                visibleCount++;
+            } else {
+                card.closest('.col-lg-6').style.display = 'none';
+            }
+        });
+        
+        document.getElementById('patientCount').textContent = visibleCount;
+    });
+
+    // Status filter functionality
+    document.getElementById('statusFilter').addEventListener('change', function() {
+        const filter = this.value;
+        const patientCards = document.querySelectorAll('.patient-card');
+        let visibleCount = 0;
+        
+        patientCards.forEach(card => {
+            const prescriptions = card.querySelector('.text-muted i.fa-pills');
+            let show = true;
+            
+            if (filter === 'active') {
+                show = prescriptions && prescriptions.parentElement.textContent.includes('prescription');
+            } else if (filter === 'completed') {
+                show = !prescriptions || !prescriptions.parentElement.textContent.includes('prescription');
+            }
+            
+            if (show) {
+                card.closest('.col-lg-6').style.display = 'block';
+                visibleCount++;
+            } else {
+                card.closest('.col-lg-6').style.display = 'none';
+            }
+        });
+        
+        document.getElementById('patientCount').textContent = visibleCount;
+    });
+
+    // Refresh data function
+    function refreshData() {
+        location.reload();
+    }
+
+    // Load statistics
+    document.addEventListener('DOMContentLoaded', function() {
+        // This would typically load from your backend
+        // For now, we'll simulate the data
+        {% if session.user_role == 'doctor' %}
+        document.getElementById('totalMedicines').textContent = '12';
+        document.getElementById('totalPrescriptions').textContent = '8';
+        document.getElementById('dispensedToday').textContent = '3';
+        {% else %}
+        document.getElementById('pendingPrescriptions').textContent = '5';
+        document.getElementById('dispensedToday').textContent = '2';
+        {% endif %}
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,649 @@
+{% extends "base.html" %}
+
+{% block title %}{{ patient.name }} - Patient Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-user"></i> {{ patient.name }}
+            </h1>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Patient Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user"></i> Patient Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="patient-info-item">
+                            <div class="patient-info-label">Name</div>
+                            <div class="patient-info-value">{{ patient.name }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="patient-info-item">
+                            <div class="patient-info-label">Age</div>
+                            <div class="patient-info-value">{{ patient.age }} years</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="patient-info-item">
+                            <div class="patient-info-label">Height</div>
+                            <div class="patient-info-value">{{ patient.height }} cm</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="patient-info-item">
+                            <div class="patient-info-label">Weight</div>
+                            <div class="patient-info-value">{{ patient.weight }} kg</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="patient-info-item">
+                            <div class="patient-info-label">Blood Pressure</div>
+                            <div class="patient-info-value">{{ patient.bp }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="patient-info-item">
+                            <div class="patient-info-label">Temperature</div>
+                            <div class="patient-info-value">{{ patient.temp }}°C</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="patient-info-item">
+                            <div class="patient-info-label">BMI</div>
+                            <div class="patient-info-value" id="patientBMI">-</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="patient-info-item">
+                            <div class="patient-info-label">Created</div>
+                            <div class="patient-info-value">
+                                {{ patient.created_at.strftime('%d/%m/%Y') if patient.created_at else 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prescriptions Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-pills"></i> Prescriptions
+                </h5>
+                <div class="d-flex gap-2">
+                    {% if patient.prescriptions and patient.prescriptions|length > 0 %}
+                    <button class="btn btn-info btn-sm" onclick="sendAllPrescriptionsToNodeMCU()">
+                        <i class="fas fa-robot"></i> Send to NodeMCU
+                    </button>
+                    {% endif %}
+                    {% if session.user_role == 'doctor' %}
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#prescribeModal">
+                        <i class="fas fa-plus"></i> Prescribe Medicine
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                {% if patient.prescriptions %}
+                    <div class="row" id="prescriptionsList">
+                        {% for prescription in patient.prescriptions %}
+                        <div class="col-12 mb-3">
+                            <div class="prescription-card {{ prescription.status }}">
+                                <div class="prescription-header">
+                                    <h6 class="prescription-title">{{ prescription.medicine_name }}</h6>
+                                    <span class="prescription-status {{ prescription.status }}">
+                                        {{ prescription.status.title() }}
+                                    </span>
+                                </div>
+                                
+                                <div class="prescription-details">
+                                    <div class="prescription-detail">
+                                        <div class="prescription-detail-label">Dosage</div>
+                                        <div class="prescription-detail-value">{{ prescription.dosage }}</div>
+                                    </div>
+                                    <div class="prescription-detail">
+                                        <div class="prescription-detail-label">Frequency</div>
+                                        <div class="prescription-detail-value">{{ prescription.frequency }}</div>
+                                    </div>
+                                    <div class="prescription-detail">
+                                        <div class="prescription-detail-label">Prescribed</div>
+                                        <div class="prescription-detail-value">
+                                            {{ prescription.prescribed_at.strftime('%d/%m/%Y %H:%M') if prescription.prescribed_at else 'N/A' }}
+                                        </div>
+                                    </div>
+                                    {% if prescription.dispensed_at %}
+                                    <div class="prescription-detail">
+                                        <div class="prescription-detail-label">Dispensed</div>
+                                        <div class="prescription-detail-value">
+                                            {{ prescription.dispensed_at.strftime('%d/%m/%Y %H:%M') }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if prescription.notes %}
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-sticky-note"></i> Notes: {{ prescription.notes }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                                
+                                {% if prescription.status == 'active' and session.user_role == 'assistant' %}
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <label for="quantity_{{ loop.index0 }}" class="form-label me-2 mb-0">
+                                            <i class="fas fa-capsules"></i> Quantity:
+                                        </label>
+                                        <input type="number" 
+                                               class="form-control form-control-sm" 
+                                               id="quantity_{{ loop.index0 }}" 
+                                               name="quantity" 
+                                               value="1" 
+                                               min="1" 
+                                               max="10" 
+                                               style="width: 80px;">
+                                    </div>
+                                    <form method="POST" action="{{ url_for('dispense_medicine') }}" style="display: inline;">
+                                        <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                                        <input type="hidden" name="prescription_index" value="{{ loop.index0 }}">
+                                        <input type="hidden" name="quantity" id="hidden_quantity_{{ loop.index0 }}" value="1">
+                                        <button type="submit" class="btn btn-success btn-sm dispense-btn" onclick="updateQuantity({{ loop.index0 }})">
+                                            <i class="fas fa-hand-holding-medical"></i> Dispense Medicine
+                                        </button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-pills fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No prescriptions yet</h5>
+                        <p class="text-muted">
+                            {% if session.user_role == 'doctor' %}
+                                Start by prescribing a medicine for this patient.
+                            {% else %}
+                                No medicines have been prescribed for this patient yet.
+                            {% endif %}
+                        </p>
+                        {% if session.user_role == 'doctor' %}
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#prescribeModal">
+                            <i class="fas fa-plus"></i> Prescribe First Medicine
+                        </button>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prescribe Medicine Modal -->
+{% if session.user_role == 'doctor' %}
+<div class="modal fade" id="prescribeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-pills"></i> Prescribe Medicine
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('prescribe_medicine') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-search"></i> Search Medicine
+                        </label>
+                        
+                        <!-- Search Method Toggle -->
+                        <div class="btn-group w-100 mb-3" role="group">
+                            <input type="radio" class="btn-check" name="searchMethod" id="typeSearch" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary" for="typeSearch">
+                                <i class="fas fa-keyboard"></i> Type Search
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="searchMethod" id="handwritingSearch" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="handwritingSearch">
+                                <i class="fas fa-pen"></i> Handwriting
+                            </label>
+                        </div>
+                        
+                        <!-- Type Search Interface -->
+                        <div id="typeSearchInterface" class="search-interface">
+                            <div class="position-relative">
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="medicineSearch" 
+                                       placeholder="Type medicine name (e.g., 'P' for Paracetamol)..."
+                                       autocomplete="off"
+                                       spellcheck="false">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-pills"></i>
+                                    </span>
+                                </div>
+                                <div id="medicineSearchResults" class="medicine-search-results" style="display: none;"></div>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> Start typing to see suggestions. Works on mobile too!
+                            </small>
+                        </div>
+                        
+                        <!-- Handwriting Search Interface -->
+                        <div id="handwritingSearchInterface" class="search-interface" style="display: none;">
+                            <div class="handwriting-container">
+                                <div class="handwriting-canvas-container">
+                                    <canvas id="handwritingCanvas" 
+                                            width="400" 
+                                            height="300"
+                                            class="handwriting-canvas">
+                                    </canvas>
+                                    <div class="handwriting-overlay">
+                                        <div class="handwriting-placeholder">
+                                            <i class="fas fa-pen"></i>
+                                            <p>Write medicine name here</p>
+                                            <small>Use your finger or stylus</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="handwriting-controls mt-3">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <button type="button" class="btn btn-warning btn-sm w-100" id="clearCanvas">
+                                                <i class="fas fa-eraser"></i> Clear
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button type="button" class="btn btn-success btn-sm w-100" id="recognizeText">
+                                                <i class="fas fa-magic"></i> Recognize
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="handwriting-result mt-3" id="handwritingResult" style="display: none;">
+                                    <label class="form-label">Recognized Text:</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="recognizedText" readonly>
+                                        <button class="btn btn-primary" type="button" id="useRecognizedText">
+                                            <i class="fas fa-search"></i> Search
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div id="handwritingSearchResults" class="medicine-search-results" style="display: none;"></div>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-mobile-alt"></i> Perfect for mobile devices! Write with your finger or stylus.
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="selectedMedicineDisplay" style="display: none;">
+                        <label class="form-label">Selected Medicine</label>
+                        <div class="form-control-plaintext" id="selectedMedicineName"></div>
+                    </div>
+                    
+                    <input type="hidden" name="medicine_id" id="medicine_id">
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Additional instructions or notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Prescribe Medicine</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/handwriting-recognition.js') }}"></script>
+<script>
+    // Calculate BMI for patient
+    document.addEventListener('DOMContentLoaded', function() {
+        const height = {{ patient.height }};
+        const weight = {{ patient.weight }};
+        const heightInMeters = height / 100;
+        const bmi = weight / (heightInMeters * heightInMeters);
+        const bmiRounded = Math.round(bmi * 10) / 10;
+        document.getElementById('patientBMI').textContent = bmiRounded;
+    });
+
+    // Enhanced medicine search functionality
+    const medicineSearchInput = document.getElementById('medicineSearch');
+    const medicineSearchResults = document.getElementById('medicineSearchResults');
+    
+    if (medicineSearchInput && medicineSearchResults) {
+        let searchTimeout;
+        
+        medicineSearchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 1) {
+                medicineSearchResults.style.display = 'none';
+                return;
+            }
+            
+            // Show loading state
+            medicineSearchResults.innerHTML = '<div class="medicine-search-item text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+            medicineSearchResults.style.display = 'block';
+            
+            searchTimeout = setTimeout(() => {
+                searchMedicinesAPI(query);
+            }, 200); // Faster response for better UX
+        });
+
+        // Handle keyboard navigation
+        medicineSearchInput.addEventListener('keydown', function(e) {
+            const items = medicineSearchResults.querySelectorAll('.medicine-search-item');
+            const activeItem = medicineSearchResults.querySelector('.medicine-search-item.active');
+            let activeIndex = -1;
+            
+            if (activeItem) {
+                activeIndex = Array.from(items).indexOf(activeItem);
+            }
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (activeIndex < items.length - 1) {
+                    if (activeItem) activeItem.classList.remove('active');
+                    items[activeIndex + 1].classList.add('active');
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (activeIndex > 0) {
+                    if (activeItem) activeItem.classList.remove('active');
+                    items[activeIndex - 1].classList.add('active');
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (activeItem) {
+                    activeItem.click();
+                }
+            } else if (e.key === 'Escape') {
+                medicineSearchResults.style.display = 'none';
+            }
+        });
+    }
+
+    // Search medicines using API
+    function searchMedicinesAPI(query) {
+        fetch(`/api/search_medicines?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.medicines) {
+                    displaySearchResults(data.medicines);
+                } else {
+                    displaySearchResults([]);
+                }
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                medicineSearchResults.innerHTML = '<div class="medicine-search-item text-danger"><i class="fas fa-exclamation-triangle"></i> Search failed</div>';
+            });
+    }
+
+    // Display search results with enhanced UI
+    function displaySearchResults(results) {
+        const medicineSearchResults = document.getElementById('medicineSearchResults');
+        
+        if (results.length === 0) {
+            medicineSearchResults.innerHTML = `
+                <div class="medicine-search-item text-muted text-center">
+                    <i class="fas fa-search"></i> No medicines found
+                    <br><small>Try a different search term</small>
+                </div>
+            `;
+        } else {
+            medicineSearchResults.innerHTML = results.map(medicine => `
+                <div class="medicine-search-item" 
+                     onclick="selectMedicine('${medicine.id}', '${medicine.name}', '${medicine.dosage}', '${medicine.frequency}')"
+                     onmouseover="this.classList.add('active')"
+                     onmouseout="this.classList.remove('active')">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fw-bold text-primary">${medicine.name}</div>
+                            <small class="text-muted">
+                                <i class="fas fa-capsules"></i> ${medicine.dosage}
+                            </small>
+                            <br>
+                            <small class="text-success">
+                                <i class="fas fa-clock"></i> ${medicine.frequency}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <i class="fas fa-arrow-right text-muted"></i>
+                        </div>
+                    </div>
+                    ${medicine.description ? `<small class="text-muted d-block mt-1">${medicine.description}</small>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        medicineSearchResults.style.display = 'block';
+    }
+
+    // Select medicine from search results
+    function selectMedicine(medicineId, medicineName, dosage, frequency) {
+        document.getElementById('medicine_id').value = medicineId;
+        document.getElementById('selectedMedicineName').textContent = `${medicineName} (${dosage} - ${frequency})`;
+        document.getElementById('selectedMedicineDisplay').style.display = 'block';
+        document.getElementById('medicineSearch').value = medicineName;
+        document.getElementById('medicineSearchResults').style.display = 'none';
+    }
+
+    // Hide search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!medicineSearchInput.contains(e.target) && !medicineSearchResults.contains(e.target)) {
+            medicineSearchResults.style.display = 'none';
+        }
+    });
+
+    // Update quantity function for dispense button
+    function updateQuantity(index) {
+        const quantityInput = document.getElementById('quantity_' + index);
+        const hiddenQuantityInput = document.getElementById('hidden_quantity_' + index);
+        if (quantityInput && hiddenQuantityInput) {
+            hiddenQuantityInput.value = quantityInput.value;
+        }
+    }
+
+    // Send all prescriptions to NodeMCU
+    function sendAllPrescriptionsToNodeMCU() {
+        const prescriptions = [
+            {% for prescription in patient.prescriptions %}
+            {
+                medicine_name: "{{ prescription.medicine_name }}",
+                dosage: "{{ prescription.dosage }}",
+                frequency: "{{ prescription.frequency }}",
+                notes: "{{ prescription.notes or '' }}",
+                status: "{{ prescription.status }}"
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const patientData = {
+            patient_name: "{{ patient.name }}",
+            patient_id: "{{ patient.id }}",
+            prescriptions: prescriptions
+        };
+
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        button.disabled = true;
+
+        // Send to NodeMCU
+        fetch('/send_prescriptions_to_nodmcu', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(patientData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('All prescriptions sent to NodeMCU successfully!', 'success');
+            } else {
+                showNotification('Failed to send prescriptions to NodeMCU: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error sending prescriptions to NodeMCU', 'error');
+        })
+        .finally(() => {
+            // Restore button state
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+
+    // Show notification function
+    function showNotification(message, type = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.container-fluid');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alertDiv);
+            bsAlert.close();
+        }, 5000);
+    }
+
+    // Initialize advanced handwriting recognition
+    let handwritingRecognition;
+
+    // Initialize handwriting recognition when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize advanced handwriting recognition
+        handwritingRecognition = new AdvancedHandwritingRecognition('handwritingCanvas');
+        
+        // Search method toggle
+        document.getElementById('typeSearch').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('typeSearchInterface').style.display = 'block';
+                document.getElementById('handwritingSearchInterface').style.display = 'none';
+            }
+        });
+        
+        document.getElementById('handwritingSearch').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('typeSearchInterface').style.display = 'none';
+                document.getElementById('handwritingSearchInterface').style.display = 'block';
+                // Reinitialize canvas when switching to handwriting mode
+                setTimeout(() => {
+                    handwritingRecognition.initializeCanvas();
+                }, 100);
+            }
+        });
+        
+        // Handwriting controls
+        document.getElementById('clearCanvas').addEventListener('click', function() {
+            handwritingRecognition.clearCanvas();
+        });
+        
+        document.getElementById('recognizeText').addEventListener('click', async function() {
+            try {
+                // Show loading state
+                const recognizeBtn = document.getElementById('recognizeText');
+                const originalText = recognizeBtn.innerHTML;
+                recognizeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recognizing...';
+                recognizeBtn.disabled = true;
+                
+                // Use advanced recognition
+                const recognizedText = await handwritingRecognition.recognizeText();
+                
+                // Display result
+                document.getElementById('recognizedText').value = recognizedText;
+                document.getElementById('handwritingResult').style.display = 'block';
+                
+                showNotification('Text recognized successfully!', 'success');
+                
+                // Restore button
+                recognizeBtn.innerHTML = originalText;
+                recognizeBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Recognition error:', error);
+                showNotification(error.message || 'Recognition failed. Please try again.', 'error');
+                
+                // Restore button
+                const recognizeBtn = document.getElementById('recognizeText');
+                recognizeBtn.innerHTML = '<i class="fas fa-magic"></i> Recognize';
+                recognizeBtn.disabled = false;
+            }
+        });
+        
+        // Use recognized text for search
+        document.getElementById('useRecognizedText').addEventListener('click', function() {
+            const recognizedText = document.getElementById('recognizedText').value;
+            if (recognizedText) {
+                // Switch to type search and populate the search field
+                document.getElementById('typeSearch').checked = true;
+                document.getElementById('typeSearchInterface').style.display = 'block';
+                document.getElementById('handwritingSearchInterface').style.display = 'none';
+                
+                // Populate search field and trigger search
+                const searchInput = document.getElementById('medicineSearch');
+                searchInput.value = recognizedText;
+                searchInput.dispatchEvent(new Event('input'));
+                
+                showNotification('Searching for: ' + recognizedText, 'info');
+            }
+        });
+        
+        // Handle window resize for canvas
+        window.addEventListener('resize', function() {
+            if (document.getElementById('handwritingSearch').checked) {
+                handwritingRecognition.initializeCanvas();
+            }
+        });
+    });
+</script>
+{% endblock %}

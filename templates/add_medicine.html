@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Add Medicine - Medical Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-pills"></i> Add New Medicine
+            </h1>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-pills"></i> Medicine Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">
+                            <i class="fas fa-pills"></i> Medicine Name *
+                        </label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                        <div class="invalid-feedback">
+                            Please provide the medicine name.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-info-circle"></i> Description
+                        </label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Brief description of the medicine..."></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="dosage" class="form-label">
+                                <i class="fas fa-weight"></i> Dosage *
+                            </label>
+                            <input type="text" class="form-control" id="dosage" name="dosage" required placeholder="e.g., 500mg, 10ml">
+                            <div class="invalid-feedback">
+                                Please provide the dosage information.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="frequency" class="form-label">
+                                <i class="fas fa-clock"></i> Frequency *
+                            </label>
+                            <select class="form-select" id="frequency" name="frequency" required>
+                                <option value="">Select frequency</option>
+                                <option value="Once daily">Once daily</option>
+                                <option value="Twice daily">Twice daily</option>
+                                <option value="Three times daily">Three times daily</option>
+                                <option value="Four times daily">Four times daily</option>
+                                <option value="Every 6 hours">Every 6 hours</option>
+                                <option value="Every 8 hours">Every 8 hours</option>
+                                <option value="Every 12 hours">Every 12 hours</option>
+                                <option value="As needed">As needed</option>
+                                <option value="Before meals">Before meals</option>
+                                <option value="After meals">After meals</option>
+                                <option value="At bedtime">At bedtime</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select the frequency.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Add Medicine
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Medicine Guidelines -->
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Medicine Guidelines
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-primary">
+                            <i class="fas fa-lightbulb"></i> Dosage Tips
+                        </h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Be specific with units (mg, ml, etc.)</li>
+                            <li><i class="fas fa-check text-success"></i> Include tablet/capsule count if applicable</li>
+                            <li><i class="fas fa-check text-success"></i> Specify concentration for liquids</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-primary">
+                            <i class="fas fa-clock"></i> Frequency Tips
+                        </h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Choose appropriate frequency</li>
+                            <li><i class="fas fa-check text-success"></i> Consider meal timing</li>
+                            <li><i class="fas fa-check text-success"></i> Use "As needed" for PRN medications</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> Once added, medicines can be prescribed to patients. Make sure all information is accurate before saving.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form validation
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.getElementsByClassName('needs-validation');
+            var validation = Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+
+    // Auto-capitalize medicine name
+    document.getElementById('name').addEventListener('input', function() {
+        this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1);
+    });
+
+    // Dosage validation
+    document.getElementById('dosage').addEventListener('input', function() {
+        const dosage = this.value.trim();
+        if (dosage && !/^\d+/.test(dosage)) {
+            this.setCustomValidity('Dosage should start with a number');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+
+    // Custom frequency option
+    document.getElementById('frequency').addEventListener('change', function() {
+        if (this.value === 'custom') {
+            const customInput = document.createElement('input');
+            customInput.type = 'text';
+            customInput.className = 'form-control mt-2';
+            customInput.placeholder = 'Enter custom frequency...';
+            customInput.name = 'custom_frequency';
+            customInput.required = true;
+            
+            this.parentNode.appendChild(customInput);
+        } else {
+            const customInput = this.parentNode.querySelector('input[name="custom_frequency"]');
+            if (customInput) {
+                customInput.remove();
+            }
+        }
+    });
+</script>
+{% endblock %}

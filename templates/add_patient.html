@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Add Patient - Medical Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-user-plus"></i> Add New Patient
+            </h1>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-plus"></i> Patient Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="needs-validation" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">
+                                <i class="fas fa-user"></i> Full Name *
+                            </label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="invalid-feedback">
+                                Please provide the patient's full name.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="age" class="form-label">
+                                <i class="fas fa-calendar"></i> Age *
+                            </label>
+                            <input type="number" class="form-control" id="age" name="age" min="0" max="150" required>
+                            <div class="invalid-feedback">
+                                Please provide a valid age.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="height" class="form-label">
+                                <i class="fas fa-ruler-vertical"></i> Height (cm) *
+                            </label>
+                            <input type="number" class="form-control" id="height" name="height" min="50" max="250" step="0.1" required>
+                            <div class="invalid-feedback">
+                                Please provide a valid height.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="weight" class="form-label">
+                                <i class="fas fa-weight"></i> Weight (kg) *
+                            </label>
+                            <input type="number" class="form-control" id="weight" name="weight" min="1" max="500" step="0.1" required>
+                            <div class="invalid-feedback">
+                                Please provide a valid weight.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="bp" class="form-label">
+                                <i class="fas fa-heartbeat"></i> Blood Pressure *
+                            </label>
+                            <input type="text" class="form-control" id="bp" name="bp" placeholder="e.g., 120/80" required>
+                            <div class="invalid-feedback">
+                                Please provide blood pressure reading.
+                            </div>
+                            <div class="form-text">
+                                Format: Systolic/Diastolic (e.g., 120/80)
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="temp" class="form-label">
+                                <i class="fas fa-thermometer-half"></i> Temperature (°C) *
+                            </label>
+                            <input type="number" class="form-control" id="temp" name="temp" min="30" max="45" step="0.1" required>
+                            <div class="invalid-feedback">
+                                Please provide a valid temperature.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="notes" class="form-label">
+                                <i class="fas fa-sticky-note"></i> Additional Notes
+                            </label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional information about the patient..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Add Patient
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BMI Calculator -->
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calculator"></i> BMI Calculator
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Height (cm)</label>
+                        <input type="number" class="form-control" id="bmiHeight" min="50" max="250" step="0.1">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Weight (kg)</label>
+                        <input type="number" class="form-control" id="bmiWeight" min="1" max="500" step="0.1">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <button type="button" class="btn btn-info w-100" onclick="calculateBMI()">
+                            <i class="fas fa-calculator"></i> Calculate BMI
+                        </button>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-control-plaintext" id="bmiResult">
+                            BMI: <span class="fw-bold">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-info" id="bmiCategory" style="display: none;">
+                            <i class="fas fa-info-circle"></i> <span id="bmiCategoryText"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form validation
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.getElementsByClassName('needs-validation');
+            var validation = Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+
+    // BMI Calculator
+    function calculateBMI() {
+        const height = parseFloat(document.getElementById('bmiHeight').value);
+        const weight = parseFloat(document.getElementById('bmiWeight').value);
+        
+        if (height && weight) {
+            const heightInMeters = height / 100;
+            const bmi = weight / (heightInMeters * heightInMeters);
+            const bmiRounded = Math.round(bmi * 10) / 10;
+            
+            document.getElementById('bmiResult').innerHTML = `BMI: <span class="fw-bold">${bmiRounded}</span>`;
+            
+            let category = '';
+            let alertClass = 'alert-info';
+            
+            if (bmi < 18.5) {
+                category = 'Underweight';
+                alertClass = 'alert-warning';
+            } else if (bmi >= 18.5 && bmi < 25) {
+                category = 'Normal weight';
+                alertClass = 'alert-success';
+            } else if (bmi >= 25 && bmi < 30) {
+                category = 'Overweight';
+                alertClass = 'alert-warning';
+            } else {
+                category = 'Obese';
+                alertClass = 'alert-danger';
+            }
+            
+            const categoryElement = document.getElementById('bmiCategory');
+            categoryElement.className = `alert ${alertClass}`;
+            categoryElement.style.display = 'block';
+            document.getElementById('bmiCategoryText').textContent = `Category: ${category}`;
+        }
+    }
+
+    // Auto-fill BMI calculator when form fields change
+    document.getElementById('height').addEventListener('input', function() {
+        document.getElementById('bmiHeight').value = this.value;
+    });
+    
+    document.getElementById('weight').addEventListener('input', function() {
+        document.getElementById('bmiWeight').value = this.value;
+    });
+
+    // Blood pressure validation
+    document.getElementById('bp').addEventListener('input', function() {
+        const bpPattern = /^\d{2,3}\/\d{2,3}$/;
+        if (this.value && !bpPattern.test(this.value)) {
+            this.setCustomValidity('Please enter blood pressure in format: 120/80');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+
+    // Temperature validation
+    document.getElementById('temp').addEventListener('input', function() {
+        const temp = parseFloat(this.value);
+        if (temp && (temp < 30 || temp > 45)) {
+            this.setCustomValidity('Temperature should be between 30°C and 45°C');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+</script>
+{% endblock %}
