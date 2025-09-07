@@ -40,20 +40,9 @@ def initialize_firebase():
             print(f"Firebase Project ID: {firebase_config['project_id']}")
             print(f"Firebase Client Email: {firebase_config['client_email']}")
             
-            # Try to create credentials with better error handling
-            try:
-                cred = credentials.Certificate(firebase_config)
-                print("Firebase credentials created successfully")
-            except Exception as cred_error:
-                print(f"Credential creation failed: {cred_error}")
-                # Try alternative method with Application Default Credentials
-                print("Trying Application Default Credentials...")
-                try:
-                    cred = credentials.ApplicationDefault()
-                    print("Using Application Default Credentials")
-                except Exception as adc_error:
-                    print(f"Application Default Credentials failed: {adc_error}")
-                    raise cred_error
+            # Create credentials from environment variables
+            cred = credentials.Certificate(firebase_config)
+            print("Firebase credentials created successfully")
         else:
             # Development: Use local file
             print("Initializing Firebase with local file...")
@@ -100,24 +89,16 @@ firebase_initialized = initialize_firebase()
 if firebase_initialized:
     print("✅ Firebase initialized successfully!")
 else:
-    print("WARNING: Firebase initialization failed. Some features may not work.")
-    # Try one more time with Application Default Credentials
-    try:
-        print("Attempting fallback initialization with Application Default Credentials...")
-        cred = credentials.ApplicationDefault()
-        # Check if Firebase app is already initialized
-        try:
-            firebase_admin.get_app()
-            print("Firebase app already initialized, using existing app")
-        except ValueError:
-            firebase_admin.initialize_app(cred)
-            print("Firebase initialized with Application Default Credentials")
-        db = firestore.client()
-        print("✅ Firebase initialized with Application Default Credentials")
-        firebase_initialized = True
-    except Exception as fallback_error:
-        print(f"❌ Fallback initialization also failed: {fallback_error}")
-        db = None
+    print("❌ Firebase initialization failed. Please check your environment variables.")
+    print("Make sure all Firebase environment variables are set correctly in Render:")
+    print("- FIREBASE_PROJECT_ID")
+    print("- FIREBASE_PRIVATE_KEY_ID") 
+    print("- FIREBASE_PRIVATE_KEY")
+    print("- FIREBASE_CLIENT_EMAIL")
+    print("- FIREBASE_CLIENT_ID")
+    print("- FIREBASE_AUTH_URI")
+    print("- FIREBASE_TOKEN_URI")
+    db = None
 
 # NodeMCU configuration
 NODEMCU_IP = os.environ.get('NODEMCU_IP', '192.168.1.100')
