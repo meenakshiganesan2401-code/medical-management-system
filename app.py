@@ -10,33 +10,75 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
 
 # Initialize Firebase Admin SDK
-try:
-    # Check if we're in production (Render) or development
-    if os.environ.get('FIREBASE_PROJECT_ID'):
-        # Production: Use environment variables
-        firebase_config = {
-            "type": "service_account",
-            "project_id": os.environ.get('FIREBASE_PROJECT_ID'),
-            "private_key_id": os.environ.get('FIREBASE_PRIVATE_KEY_ID'),
-            "private_key": os.environ.get('FIREBASE_PRIVATE_KEY').replace('\\n', '\n'),
-            "client_email": os.environ.get('FIREBASE_CLIENT_EMAIL'),
-            "client_id": os.environ.get('FIREBASE_CLIENT_ID'),
-            "auth_uri": os.environ.get('FIREBASE_AUTH_URI', 'https://accounts.google.com/o/oauth2/auth'),
-            "token_uri": os.environ.get('FIREBASE_TOKEN_URI', 'https://oauth2.googleapis.com/token')
-        }
-        cred = credentials.Certificate(firebase_config)
-        print("Firebase initialized with environment variables")
-    else:
-        # Development: Use local file
-        cred = credentials.Certificate('firebase-service-account.json')
-        print("Firebase initialized with local file")
-    
-    firebase_admin.initialize_app(cred)
-    db = firestore.client()
-    print("Firebase initialized successfully")
-except Exception as e:
-    print(f"Firebase initialization error: {e}")
-    db = None
+def initialize_firebase():
+    global db
+    try:
+        # Check if we're in production (Render) or development
+        if os.environ.get('FIREBASE_PROJECT_ID'):
+            # Production: Use environment variables
+            print("Initializing Firebase with environment variables...")
+            
+            # Validate required environment variables
+            required_vars = ['FIREBASE_PROJECT_ID', 'FIREBASE_PRIVATE_KEY_ID', 'FIREBASE_PRIVATE_KEY', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_CLIENT_ID']
+            missing_vars = [var for var in required_vars if not os.environ.get(var)]
+            
+            if missing_vars:
+                print(f"Missing environment variables: {missing_vars}")
+                return False
+            
+            firebase_config = {
+                "type": "service_account",
+                "project_id": os.environ.get('FIREBASE_PROJECT_ID'),
+                "private_key_id": os.environ.get('FIREBASE_PRIVATE_KEY_ID'),
+                "private_key": os.environ.get('FIREBASE_PRIVATE_KEY').replace('\\n', '\n'),
+                "client_email": os.environ.get('FIREBASE_CLIENT_EMAIL'),
+                "client_id": os.environ.get('FIREBASE_CLIENT_ID'),
+                "auth_uri": os.environ.get('FIREBASE_AUTH_URI', 'https://accounts.google.com/o/oauth2/auth'),
+                "token_uri": os.environ.get('FIREBASE_TOKEN_URI', 'https://oauth2.googleapis.com/token')
+            }
+            
+            print(f"Firebase Project ID: {firebase_config['project_id']}")
+            print(f"Firebase Client Email: {firebase_config['client_email']}")
+            
+            cred = credentials.Certificate(firebase_config)
+            print("Firebase credentials created successfully")
+        else:
+            # Development: Use local file
+            print("Initializing Firebase with local file...")
+            if not os.path.exists('firebase-service-account.json'):
+                print("ERROR: firebase-service-account.json not found!")
+                return False
+            cred = credentials.Certificate('firebase-service-account.json')
+            print("Firebase credentials loaded from local file")
+        
+        # Initialize Firebase app
+        firebase_admin.initialize_app(cred)
+        print("Firebase Admin SDK initialized")
+        
+        # Test Firestore connection
+        db = firestore.client()
+        print("Firestore client created")
+        
+        # Test connection with a simple operation
+        test_doc = db.collection('test').document('connection_test')
+        test_doc.set({'test': True, 'timestamp': firestore.SERVER_TIMESTAMP})
+        test_doc.delete()
+        print("Firebase connection test successful")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Firebase initialization error: {e}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        db = None
+        return False
+
+# Initialize Firebase
+firebase_initialized = initialize_firebase()
+if not firebase_initialized:
+    print("WARNING: Firebase initialization failed. Some features may not work.")
 
 # NodeMCU configuration
 NODEMCU_IP = os.environ.get('NODEMCU_IP', '192.168.1.100')
