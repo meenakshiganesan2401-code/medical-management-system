@@ -40,8 +40,20 @@ def initialize_firebase():
             print(f"Firebase Project ID: {firebase_config['project_id']}")
             print(f"Firebase Client Email: {firebase_config['client_email']}")
             
-            cred = credentials.Certificate(firebase_config)
-            print("Firebase credentials created successfully")
+            # Try to create credentials with better error handling
+            try:
+                cred = credentials.Certificate(firebase_config)
+                print("Firebase credentials created successfully")
+            except Exception as cred_error:
+                print(f"Credential creation failed: {cred_error}")
+                # Try alternative method with Application Default Credentials
+                print("Trying Application Default Credentials...")
+                try:
+                    cred = credentials.ApplicationDefault()
+                    print("Using Application Default Credentials")
+                except Exception as adc_error:
+                    print(f"Application Default Credentials failed: {adc_error}")
+                    raise cred_error
         else:
             # Development: Use local file
             print("Initializing Firebase with local file...")
@@ -75,10 +87,41 @@ def initialize_firebase():
         db = None
         return False
 
-# Initialize Firebase
-firebase_initialized = initialize_firebase()
+# Initialize Firebase with multiple retry attempts
+firebase_initialized = False
+max_retries = 3
+
+for attempt in range(max_retries):
+    print(f"Firebase initialization attempt {attempt + 1}/{max_retries}")
+    
+    try:
+        firebase_initialized = initialize_firebase()
+        if firebase_initialized:
+            print("✅ Firebase initialized successfully!")
+            break
+        else:
+            print(f"❌ Attempt {attempt + 1} failed")
+    except Exception as e:
+        print(f"❌ Attempt {attempt + 1} failed with error: {e}")
+    
+    if attempt < max_retries - 1:
+        print("⏳ Waiting 5 seconds before retry...")
+        import time
+        time.sleep(5)
+
 if not firebase_initialized:
-    print("WARNING: Firebase initialization failed. Some features may not work.")
+    print("WARNING: All Firebase initialization attempts failed. Some features may not work.")
+    # Try one more time with Application Default Credentials
+    try:
+        print("Attempting fallback initialization with Application Default Credentials...")
+        cred = credentials.ApplicationDefault()
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        print("✅ Firebase initialized with Application Default Credentials")
+        firebase_initialized = True
+    except Exception as fallback_error:
+        print(f"❌ Fallback initialization also failed: {fallback_error}")
+        db = None
 
 # NodeMCU configuration
 NODEMCU_IP = os.environ.get('NODEMCU_IP', '192.168.1.100')
